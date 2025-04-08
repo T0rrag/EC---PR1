@@ -211,44 +211,46 @@ getchP1:
 ; (colScreen): Columna de la pantalla donde posicionamos el cursor.
 ; (posCusor) : Posición del cursor dentro de la matriz mBoard.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; EX1
+; Iniciamos la subrutina
 posCurBoardP1:
-   push rbp
-   mov  rbp, rsp
+   push rbp						;guardamos registro base en pila
+   mov  rbp, rsp				;rbp = rsp
    ;guardar el estado de los registros que se modifican en esta 
    ;subrutina y que no se utilizan para devolver valores.
-   push rax
-   push rbx
-   push rdx
+   push rax						;guardamos rax en pila (no es retornable) ya que lo modificaremos
+   push rbx						;guardamos rbx en pila (no es retornable) ya que lo modificaremos
+   push rdx						;guardamos rdx en pila (para preservar)
    
-   ;cargar posicióncursor posCUrso 
+   ;cargar posición cursor en rax. Lo que indica posición en matriz.
    mov rax, [posCursor]
    
    ;Calculo de ancho de pantalla
-   mov rbx, DIMMATRIX
-   xor rdx, rdx
-   div rbx
-   shl rax, 1
-   add rax, 7
-   mov [rowScreen], eax
+   mov rbx, DIMMATRIX			;cargamos el valor DIMMATRIX (dimensión) en rbx
+   xor rdx, rdx					;Ponemos rdx a 0 para almacenar valores
+   div rbx						;dividimos rax/rbx
+   shl rax, 1					;Multiplicamos rax*2 (1bit desplazado)
+   add rax, 7					;SUmamos 7 para completar la fórmula pedida rowScreen 7 + (posCUrsor/Dimmatrix)*2
+   mov [rowScreen], eax			;Almacenamos el valor en rowscreen usando eax (32b) porque el tamaño puede ser variable
    
    ;Calculo de alto de pantalla
-   mov rax, rdx
-   shl rax, 2
-   add rax, 8
-   mov [colScreen], eax
+   mov rax, rdx					;Usamos el resto de dividir rdx en rax. SErá nuestro posCurso % DIMMATRIX
+   shl rax, 2					;Multiplicamos rax *4 (2bits desplazados)
+   add rax, 8         			;SUmamos 8 al resultado para colScreen = 8 + (poscursor % DIMMATRIX)*4
+   mov [colScreen], eax			;Almacenamos el valor en colscreen usando eax (32b) porque el tamaño puede ser variable
    
    ;posicionamiento de cursor con gotoxy
-   call gotoxyP1
+   call gotoxyP1				;COn go - to - x|y posicionamos el cursor en pantalla en base a rowScreen y colScreen
    
-   posCurBoardP1_end:  
+   posCurBoardP1_end:  			;final de subrutina
    ;restaurar el estado de los registros que se han guardado en la pila.
-   pop rdx
-   pop rbx
-   pop rax
-   mov rsp, rbp
-   pop rbp
-   ret
+   pop rdx						;restaura rdx desde pila
+   pop rbx 						;restaura rbx desde pila
+   pop rax						;restaura rax desde pila
+   mov rsp, rbp					;restaura rsp al valor de rbp
+   pop rbp						;restaura rbp desde pila
+   ret							;retornar (end)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -261,7 +263,7 @@ posCurBoardP1:
 ;  
 ; Variables globales utilizadas:
 ; (row)        : Fila de la matriz mBoard.
-; (col)        : Columna de la matriz mBoard.
+; (col)        : Columna de la matriz mBoard.guardamos rax en pila (no es retornable) ya que lo modificaremos
 ; (posCursor)  : Posición del cursor dentro de la matriz mBoard.
 ; (mBoard)     : Dirección de la matriz donde guardamos las fichas introducidas. 
 ; (stoneSymbol): Símbolo de la ficha del jugador que está jugando.
@@ -269,37 +271,36 @@ posCurBoardP1:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;EX 2
 
-showStonePosP1:
-   push rbp
-   mov  rbp, rsp
+showStonePosP1:					;inicio de subrutina
+   push rbp						;guardamos registro base en pila
+   mov  rbp, rsp				;igualamos rbp a rsp
    ;guardar el estado de los registros que se modifican en esta 
    ;subrutina y que no se utilizan para devolver valores.
-   push rax
-   push rbx
+   push rax						;guardamos rax en pila (no es retornable) ya que lo modificaremos
+   push rbx						;guardamos rax en pila (no es retornable) ya que lo modificaremos
    
    ;cargar posCursor
-   mov rax, [posCursor]
+   mov rax, [posCursor]							;cargamos posición de cursor en rax para indicar la posición en el tablero	
    
    ;Asignar símbolos en mBoard
-   mov rbx, mBoard
-   mov bl, [rbx + rax]
-   mov [stoneSymbol], bl
+   mov rbx, mBoard								;cargamos tablero en rbx
+   mov bl, [rbx + rax]							;usamos el símbolo almacenado anteriormente y lo pasamos a bl (rbx lowest)
+   mov [stoneSymbol], bl						;pasamos dicho bit obtenido a la variable stoneSymbol.
    
    ;llevar ese símbolo a caracteres y mostrar en pantalla
-   mov al, [stoneSymbol]
-   mov [charac], al
+   mov al, [stoneSymbol]						;cargamos stoneSymbol en al (rax lowest) para usarlo
+   mov [charac], al								;lo almacenamos en la variable global charac(ter) para mostrar en pantalla el símbolo X-0.
    
    ;print
-   call printchP1
+   call printchP1								;print el character almacenado en la posCUrsor actual
     
-   showStonePosP1_end:  
+   showStonePosP1_end:  						;fin de rutina
    ;restaurar el estado de los registros que se han guardado en la pila.
-   pop rbx
-   pop rax
-   
-   mov rsp, rbp
-   pop rbp
-   ret
+   pop rbx						;restaura rbx desde pila
+   pop rax						;restaura rax desde pila
+   mov rsp, rbp					;restaura rsp al valor de rbp
+   pop rbp						;restaura rbp desde pila
+   ret							;retornar (end)
  
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -316,18 +317,19 @@ showStonePosP1:
 ; (posCursor)  : Posición del cursor dentro de la matriz mBoard.
 ; (charac)     : Carácter que queremos mostrar.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;EX 3
-moveCursorP1:
-   push rbp
-   mov  rbp, rsp
+moveCursorP1:							;inicio subrutina
+   push rbp								;guardamos valor de registro base en pila
+   mov  rbp, rsp						;gualamos rbp a rsp
    ; Guardar registros que se modifican
-   push rax
-   push rbx
-   push rdx
+   push rax								;guardamos rax en pila (no es retornable) ya que lo modificaremos
+   push rbx								;guardamos rbx en pila (no es retornable) ya que lo modificaremos
+   push rdx								;guardamos rdx en pila (no es retornable) ya que lo modificaremos
 
    ;Cargar caracteres y posición de cursor
-   mov al, [charac]
-   mov rbx, [posCursor]
+   mov al, [charac]						;cargamos el character que se introducirá
+   mov rbx, [posCursor]					;cargamos la posición del cursor en rbx
 
    ;PUnto de comparación 'i' (arriba)
    ;puntos considerados, si i>=10 (incluye row0)
@@ -387,18 +389,16 @@ moveCursorP1_check_l:
    jmp moveCursorP1_update
 
 moveCursorP1_update:
-   ; Actualizar posCursor
-   mov [posCursor], rbx
+   mov [posCursor], rbx			;Actualizar posCursor si el movimiento es válido
 
 moveCursorP1_end:
    ; Restaurar registros
-   pop rdx
-   pop rbx
-   pop rax
-
-   mov rsp, rbp
-   pop rbp
-   ret
+   pop rdx						;restaura rdx desde pila
+   pop rbx 						;restaura rbx desde pila
+   pop rax						;restaura rax desde pila
+   mov rsp, rbp					;restaura rsp al valor de rbp
+   pop rbp						;restaura rbp desde pila
+   ret							;retornar (end)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -431,64 +431,65 @@ moveCursorP1_end:
 ; (mBoard)   : Dirección de la matriz donde guardamos las fichas introducidas. 
 ; (dirLines) : Dirección de la matriz que indica el incremento que se debe hacer a la posición actual para seguir una dirección.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;EX 4
 
 checkAroundP1:
-   push rbp
-   mov  rbp, rsp
-   push rax
-   push rbx
-   push rcx
-   push rdx
-   push rsi
+   push rbp					;guardamos registro base rbp en pila
+   mov  rbp, rsp			;igualamos rbp a rsp
+   push rax					;guardamos rax en pila
+   push rbx					;guardamos rbx en pila
+   push rcx					;guardamos rcx en pila -nuestro counter-
+   push rdx					;guardamos rdx en pila
+   push rsi					;guardamos rsi en pila
 
-   xor ecx, ecx
-   mov DWORD [neighbors], 0
+   xor ecx, ecx				;ponemos ecx a 0 para iniciar el contador.
+   mov DWORD [neighbors], 0 ;inicializar vecinos a 0, guardo aquí el nº de vecinos
 
-checkAroundP1_loop:
-   cmp ecx, 8
-   jge checkAroundP1_end
+checkAroundP1_loop:			;inicio de bucle
+   cmp ecx, 8				;comparamos ecx con las direcciones (8)
+   jge checkAroundP1_end	;si ecx >= 8 el bucle termina
 
-   mov rax, [posCursor]
-   mov rbx, dirLines
-   mov rsi, rcx
-   shl rsi, 3
-   add rax, [rbx + rsi]
+   mov rax, [posCursor]		;cargamos la posición del cursor en rax
+   mov rbx, dirLines		;cargamos dirección de desplzamientos
+   mov rsi, rcx				;copiamos counter ecx a rsi
+   shl rsi, 3				;desplazamos 3 bits
+   add rax, [rbx + rsi]		;sumamos el desplazamiento a la dirección actual
 
-   mov rbx, DIMMATRIX
-   xor rdx, rdx
-   div rbx
+   mov rbx, DIMMATRIX		;cargamos dimmatrix en rbx para dividir
+   xor rdx, rdx				;limpiamos valores de rdx (a 0)
+   div rbx					;dividimos rax/DIMMATRIX (rax = fila || rdx = columna)
 
-   cmp rax, 0
-   jl checkAroundP1_next
-   cmp rax, DIMMATRIX-1
-   jg checkAroundP1_next
-   cmp rdx, 0
-   jl checkAroundP1_next
-   cmp rdx, DIMMATRIX-1
-   jg checkAroundP1_next
+   cmp rax, 0				;comparamos fila con 0
+   jl checkAroundP1_next	;si fila < 0 pasamos a la siguiente
+   cmp rax, DIMMATRIX-1		;si fila
+   jg checkAroundP1_next	;        > DIMMATRIX-1 saltamos a la siguiente
+   cmp rdx, 0				;comparamos columna con 0
+   jl checkAroundP1_next	;si columna < 0, pasamos a la siguiente
+   cmp rdx, DIMMATRIX-1		;si columna
+   jg checkAroundP1_next	;			> DIMMATRIX-1 saltamos a la siguiente
 
-   mov rbx, mBoard
-   mov rsi, rax
-   imul rsi, DIMMATRIX
-   add rsi, rdx
-   cmp BYTE [rbx + rsi], ' '
-   je checkAroundP1_next
-   inc DWORD [neighbors]
+   mov rbx, mBoard			;cargamos board en rbx
+   mov rsi, rax				;copia fila a rsi para calcular index en board
+   imul rsi, DIMMATRIX		;multiplicamos rsi por DIMMATRIX para tener desplazamiento de fila
+   add rsi, rdx				;suma columna rdx a desplazamiento (índice lineal)
+   cmp BYTE [rbx + rsi], ' ';comparamos byte en board con espacio
+   je checkAroundP1_next	;si es espacio (no neighbors) siguiente
+   inc DWORD [neighbors]	;si no hay espacio (neighbors) counter +1
 
-checkAroundP1_next:
-   inc ecx
-   jmp checkAroundP1_loop
+checkAroundP1_next:			;siguiente iteración del bucle
+   inc ecx					;incrementa el contador
+   jmp checkAroundP1_loop	;salto al inicio de bucle para continuar
 
-checkAroundP1_end:
-   pop rsi
-   pop rdx
-   pop rcx
-   pop rbx
-   pop rax
-   mov rsp, rbp
-   pop rbp
-   ret
+checkAroundP1_end:			;final de subrutina
+   pop rsi					;restaura rsi desde pila
+   pop rdx					;restaura rdx desde pila
+   pop rcx					;restaura rcx desde pila
+   pop rbx					;restaura rbx desde pila
+   pop rax					;restaura rax desde pila
+   mov rsp, rbp				;restaura rsp a valor de rbp
+   pop rbp					;restaura rbp desde pila
+   ret						;retorna(end)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -517,42 +518,43 @@ checkAroundP1_end:
 ; (newState)   : Estado del juego.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;EX 5
-insertStoneP1:
-   push rbp
-   mov  rbp, rsp
-   push rax
-   push rbx
 
-   mov rbx, mBoard
-   mov rax, [posCursor]
-   cmp BYTE [rbx + rax], ' '
-   jne insertStoneP1_end
+insertStoneP1:				;inicio de subrutina	
+   push rbp					;guardamos valor de registro base en pila
+   mov  rbp, rsp			;rbp = rsp
+   push rax					;guardamos rax en pila
+   push rbx					;guardams rbx en pila
 
-   call checkAroundP1
-   cmp DWORD [neighbors], 0
-   jle insertStoneP1_end
+   mov rbx, mBoard						;carga board en brbx
+   mov rax, [posCursor]					;carga posición cursor en rax
+   cmp BYTE [rbx + rax], ' '			;compara byte en board con espacio (si vacío)
+   jne insertStoneP1_end				;SI no está vacío pasamos al final
 
-   mov ax, [state]
-   cmp ax, 1
-   jne insertStoneP1_p2
-   mov al, STONESYMBOLPLAYER1
-   jmp insertStoneP1_set
-insertStoneP1_p2:
-   mov al, STONESYMBOLPLAYER2
-insertStoneP1_set:
-   mov [rbx + rax], al
-   mov [stoneSymbol], al
+   call checkAroundP1					;llamada a función checkaround para comprobar vecinos
+   cmp DWORD [neighbors], 0				;comparamos los vecinos con 0
+   jle insertStoneP1_end				;si vecinos <=0 pasamos al final
 
-   mov ax, 3
-   sub ax, [state]
-   mov [newState], ax
+   mov ax, [state]						;cargamos el estado del juego actual en ax (jugador)
+   cmp ax, 1							;compara state 1 con player 1
+   jne insertStoneP1_p2					;else player 2
+   mov al, STONESYMBOLPLAYER1			;carga símbolo player 1
+   jmp insertStoneP1_set				;salta a la dirección del símbolo
+insertStoneP1_p2:						;etiqueta de player 2
+   mov al, STONESYMBOLPLAYER2			;carga símbolo player 2
+insertStoneP1_set:						;poner símbolo en matriz
+   mov [rbx + rax], al					;almacena símbolo en board
+   mov [stoneSymbol], al				;guarda símbolo en variable global (stoneSymbol)
 
-insertStoneP1_end:
-   pop rbx
-   pop rax
-   mov rsp, rbp
-   pop rbp
-   ret
+   mov ax, 3							;carga 3 en ax para calcular nuevo estado
+   sub ax, [state]						;resta al estado actual 3.
+   mov [newState], ax					;el resultado es el nuevo estado (newState)
+
+insertStoneP1_end:				;final de subrutina
+   pop rbx						;restaura valor original rbx desde pila
+   pop rax						;restaura valor original rax desde pila
+   mov rsp, rbp					;el valor de rsp pasa al valor de rbp
+   pop rbp						;restaura valor original rbp desde pila
+   ret							;fin de subrutina
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Verifica si el tablero está lleno y no se puede seguir jugando.
@@ -568,47 +570,45 @@ insertStoneP1_end:
 ; (mBoard): Dirección de la matriz donde guardamos las fichas introducidas. 
 ; (state) : Estado del juego.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;EX 6	
-checkEndP1:
-   push rbp
-   mov  rbp, rsp
+checkEndP1:							;inicio subrutina
+   push rbp							;guardamos valor de registro base en pila
+   mov  rbp, rsp					;rbp = rsp
    ;guardar el estado de los registros que se modifican en esta 
    ;subrutina y que no se utilizan para devolver valores.
-   push rax
-   push rbx
-   push rcx
+   push rax							;guardamos rax en pila
+   push rbx							;guardams rbx en pila
+   push rcx							;guardams rcx en pila
    
    ;init counter
-   xor rcx, rcx
+   xor rcx, rcx						;ponemos a 0 el counter (rcx)
    
-   checkEndP1_loop:
-   cmp rcx, DIMMATRIX * DIMMATRIX
-   jge checkEndP1_full
+   checkEndP1_loop:					;inicio bucle
+   cmp rcx, DIMMATRIX * DIMMATRIX	;comparamos rcx con tamaño de matriz
+   jge checkEndP1_full				;si rcx >= tamaño total = tablero lleno pasamos a checkENdP1_full
   
   ;check si tiene espacio
-  mov rbx, mBoard
-  mov al, [rbx + rcx]
-  cmp al, ' '
-  je checkEndP1_end
+  mov rbx, mBoards					;cargamos dirección board en rbx
+  mov al, [rbx + rcx]				;cargamos posición actual en al
+  cmp al, ' '						;comparamos con espacio
+  je checkEndP1_end					;si hay espacio pasamos a siguiente instrucción
   
-  inc rcx
-  jmp checkEndP1_loop
+  inc rcx							;incremento rcx para pasar a siguiente posición en matriz
+  jmp checkEndP1_loop				;salto al inicio del bucle para seguir revisando
   
-  checkEndP1_full:
-  ;si el tablero está lleno, pasamos a state 5
-  mov WORD [state], 5
+  checkEndP1_full:					;si el tablero está lleno, pasamos a state 5
+  mov WORD [state], 5				;var global a state 5 (full)
   
-   checkEndP1_end:
+   checkEndP1_end:					;fin de subrutina
    ;restaurar el estado de los registros que se han guardado en la pila.
-   pop rcx
-   pop rbx
-   pop rax
-   
-   mov rsp, rbp
-   pop rbp
-   ret
+   pop rcx							;restaura valor original rcx desde pila
+   pop rbx							;restaura valor original rbx desde pila
+   pop rax							;restaura valor original rax desde pila
+   mov rsp, rbp						;el valor de rsp pasa al valor de rbp
+   pop rbp							;restaura valor original rbp desde pila
+   ret								;fin de subrutina
 
-  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  Muestra un mensaje en la parte inferior del tablero según el 
 ; valor de la variable (state).
