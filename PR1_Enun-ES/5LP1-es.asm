@@ -271,38 +271,28 @@ posCurBoardP1:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;EX 2
 
-showStonePosP1:					;inicio de subrutina
-   push rbp						;guardamos registro base en pila
-   mov  rbp, rsp				;igualamos rbp a rsp
-   ;guardar el estado de los registros que se modifican en esta 
-   ;subrutina y que no se utilizan para devolver valores.
-   push rax						;guardamos rax en pila (no es retornable) ya que lo modificaremos
-   push rbx						;guardamos rax en pila (no es retornable) ya que lo modificaremos
+showStonePosP1:
+   push rbp
+   mov  rbp, rsp
+   push rax
+   push rbx
+
+   mov rax, [posCursor]
+   mov rbx, mBoard
+   mov bl, [rbx + rax]      ; Carga el símbolo desde mBoard[posCursor]
+   mov [stoneSymbol], bl    ; Guarda en stoneSymbol
+   mov al, [stoneSymbol]    ; Carga en al
+   mov [charac], al         ; Guarda en charac
+   call printchP1           ; Muestra el carácter
+
+showStonePosP1_end:
+   pop rbx
+   pop rax
+   mov rsp, rbp
+   pop rbp
+   ret
    
-   ;cargar posCursor
-   mov rax, [posCursor]							;cargamos posición de cursor en rax para indicar la posición en el tablero	
-   
-   ;Asignar símbolos en mBoard
-   mov rbx, mBoard								;cargamos tablero en rbx
-   mov bl, [rbx + rax]							;usamos el símbolo almacenado anteriormente y lo pasamos a bl (rbx lowest)
-   mov [stoneSymbol], bl						;pasamos dicho bit obtenido a la variable stoneSymbol.
-   
-   ;llevar ese símbolo a caracteres y mostrar en pantalla
-   mov al, [stoneSymbol]						;cargamos stoneSymbol en al (rax lowest) para usarlo
-   mov [charac], al								;lo almacenamos en la variable global charac(ter) para mostrar en pantalla el símbolo X-0.
-   
-   ;print
-   call printchP1								;print el character almacenado en la posCUrsor actual
-    
-   showStonePosP1_end:  						;fin de rutina
-   ;restaurar el estado de los registros que se han guardado en la pila.
-   pop rbx						;restaura rbx desde pila
-   pop rax						;restaura rax desde pila
-   mov rsp, rbp					;restaura rsp al valor de rbp
-   pop rbp						;restaura rbp desde pila
-   ret							;retornar (end)
- 
- 
+ ;puede ocasionar problemas en play1 si se modifica
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Actualizar la posición donde está el cursor (posCursor) según
 ; el carácter (charac) leído de teclado:
@@ -519,43 +509,49 @@ checkAroundP1_end:			;final de subrutina
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;EX 5
 
-insertStoneP1:				;inicio de subrutina	
-   push rbp					;guardamos valor de registro base en pila
-   mov  rbp, rsp			;rbp = rsp
-   push rax					;guardamos rax en pila
-   push rbx					;guardams rbx en pila
+insertStoneP1:
+   push rbp                 ; Guarda el registro base en la pila
+   mov  rbp, rsp            ; Establece el marco de pila
+   push rax                 ; Guarda rax
+   push rbx                 ; Guarda rbx
+   push rcx                 ; Guarda rcx (lo usaremos como respaldo)
 
-   mov rbx, mBoard						;carga board en brbx
-   mov rax, [posCursor]					;carga posición cursor en rax
-   cmp BYTE [rbx + rax], ' '			;compara byte en board con espacio (si vacío)
-   jne insertStoneP1_end				;SI no está vacío pasamos al final
+   mov rbx, mBoard          ; Carga la dirección base de mBoard en rbx
+   mov rax, [posCursor]     ; Carga posCursor en rax
+   mov rcx, rax             ; Guarda una copia de posCursor en rcx
+   cmp BYTE [rbx + rax], ' '; Verifica si la posición está vacía
+   jne insertStoneP1_end    ; Si no está vacía, termina
 
-   call checkAroundP1					;llamada a función checkaround para comprobar vecinos
-   cmp DWORD [neighbors], 0				;comparamos los vecinos con 0
-   jle insertStoneP1_end				;si vecinos <=0 pasamos al final
+   push rax                 ; Preserva rax antes de llamar a checkAroundP1
+   call checkAroundP1       ; Verifica vecinos
+   pop rax                  ; Restaura rax con posCursor
+   cmp DWORD [neighbors], 0 ; Comprueba si hay vecinos
+   jle insertStoneP1_end    ; Si no hay vecinos, termina
 
-   mov ax, [state]						;cargamos el estado del juego actual en ax (jugador)
-   cmp ax, 1							;compara state 1 con player 1
-   jne insertStoneP1_p2					;else player 2
-   mov al, STONESYMBOLPLAYER1			;carga símbolo player 1
-   jmp insertStoneP1_set				;salta a la dirección del símbolo
-insertStoneP1_p2:						;etiqueta de player 2
-   mov al, STONESYMBOLPLAYER2			;carga símbolo player 2
-insertStoneP1_set:						;poner símbolo en matriz
-   mov [rbx + rax], al					;almacena símbolo en board
-   mov [stoneSymbol], al				;guarda símbolo en variable global (stoneSymbol)
+   movzx eax, WORD [state]  ; Carga state en eax (extiende cero)
+   cmp eax, 1               ; Compara con jugador 1
+   jne insertStoneP1_p2     ; Si no es 1, salta a jugador 2
+   mov al, STONESYMBOLPLAYER1 ; Carga 'X' (88)
+   jmp insertStoneP1_set
+insertStoneP1_p2:
+   mov al, STONESYMBOLPLAYER2 ; Carga 'O' (79)
+insertStoneP1_set:
+   mov BYTE [rbx + rcx], al ; Escribe el símbolo en mBoard[posCursor] usando rcx
+   mov [stoneSymbol], al    ; Actualiza stoneSymbol
 
-   mov ax, 3							;carga 3 en ax para calcular nuevo estado
-   sub ax, [state]						;resta al estado actual 3.
-   mov [newState], ax					;el resultado es el nuevo estado (newState)
+   movzx eax, WORD [state]  ; Recarga state
+   mov edx, 3               ; Carga 3 para alternar el estado
+   sub edx, eax             ; Calcula 3 - state
+   mov [newState], dx       ; Actualiza newState
 
-insertStoneP1_end:				;final de subrutina
-   pop rbx						;restaura valor original rbx desde pila
-   pop rax						;restaura valor original rax desde pila
-   mov rsp, rbp					;el valor de rsp pasa al valor de rbp
-   pop rbp						;restaura valor original rbp desde pila
-   ret							;fin de subrutina
-
+insertStoneP1_end:
+   pop rcx                  ; Restaura rcx
+   pop rbx                  ; Restaura rbx
+   pop rax                  ; Restaura rax
+   mov rsp, rbp             ; Restaura el puntero de pila
+   pop rbp                  ; Restaura rbp
+   ret                      ; Retorna
+   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Verifica si el tablero está lleno y no se puede seguir jugando.
 ; Recorremos todo el tablero (mBoard) para mirar si está lleno,
@@ -589,7 +585,7 @@ checkEndP1:							;inicio subrutina
    jge checkEndP1_full				;si rcx >= tamaño total = tablero lleno pasamos a checkENdP1_full
   
   ;check si tiene espacio
-  mov rbx, mBoards					;cargamos dirección board en rbx
+  mov rbx, mBoard					;cargamos dirección board en rbx
   mov al, [rbx + rcx]				;cargamos posición actual en al
   cmp al, ' '						;comparamos con espacio
   je checkEndP1_end					;si hay espacio pasamos a siguiente instrucción
